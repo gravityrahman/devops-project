@@ -1,0 +1,28 @@
+# We redifine the stages as Gitlab CI doesn't merge stages.
+stages:
+  - apptest
+  - unittest
+  - appbuild
+  - apppublish
+  - test
+  - init
+  - validate
+  - build
+  - deploy
+  - cleanup
+
+
+# Include other pipelines instead of defining everything in one file.
+# The go app is in the app directory.
+# The Gitlab Terraform one is at
+# https://gitlab.com/gitlab-org/gitlab-foss/-/blob/master/lib/gitlab/ci/templates/Terraform.latest.gitlab-ci.yml
+include:
+  - local: devops-tech-challenge-2023/app/.gitlab-ci.yml
+  - template: Terraform.latest.gitlab-ci.yml
+
+# Define some helper variables available to all jobs.
+variables:
+  TF_STATE_NAME: default
+  TF_CACHE_KEY: default
+  TF_ROOT: terraform
+  TF_VAR_gl_project: $CI_PROJECT_PATH

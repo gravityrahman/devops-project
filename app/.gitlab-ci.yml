@@ -1,0 +1,61 @@
+variables:
+  AWS_DEFAULT_REGION: us-east-1 # The region of our S3 bucket
+  S3_ARTIFACT_STORAGE_BUCKET: myartifactbucket2345
+#   CI_PROJECT_DIR: "/devops-tech-challenge-2023"
+
+stages:
+  - apptest
+  - unittest
+  - appbuild
+  - apppublish
+
+# Run golangci-lint to look for good coding practices.
+golangcli-lint:
+  stage: apptest
+  image: golangci/golangci-lint:v1.45.2
+  before_script:
+    - cd devops-tech-challenge-2023/app
+  script:
+    - echo '[]' > codeclimate.json
+    - golangci-lint run ./... || golangci-lint run --out-format code-climate --issues-exit-code 0 ./... > codeclimate.json
+  artifacts:
+    reports:
+      codequality: app/codeclimate.json
+
+#unit test
+unit-test:
+  stage: unittest
+  image: golangci/golangci-lint:v1.45.2
+  before_script: 
+    - cd devops-tech-challenge-2023/app
+  script: 
+    - go test
+# Builds our go app, zips the app, and stores to a gitlab artifact for deploy stage.
+build-app:
+  stage: appbuild
+  image: golang:1.16
+  before_script:
+    - echo -e "machine ${CI_SERVER_HOST}\nlogin gitlab-ci-token\npassword ${CI_JOB_TOKEN}" > ~/.netrc
+    - apt-get update
+    - apt-get install -y zip
+    - mkdir -p ${CI_PROJECT_DIR}/build
+    - cd devops-tech-challenge-2023/app
+  script:
+    - go mod download
+    - GOOS=linux GOARCH=amd64 go build -o ${CI_PROJECT_DIR}/build/app .
+    - chmod +x ${CI_PROJECT_DIR}/build/app
+    - cd ${CI_PROJECT_DIR}/build && zip app.zip app
+  artifacts:
+    paths:
+      - build/*.zip
+
+# Uploads our go app to an S3 bucket.
+publish-app:
+  stage: apppublish
+  image:
+    name: amazon/aws-cli:2.0.52
+    entrypoint: [""]
+  before_script:
+    - cd build
+  script:
+    - aws s3 cp --acl bucket-owner-full-control app.zip s3://${S3_ARTIFACT_STORAGE_BUCKET}/${TF_VAR_gl_project}-app.zip

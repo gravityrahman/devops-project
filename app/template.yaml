@@ -1,0 +1,28 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  ManagementAPI:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: main
+      Runtime: go1.x
+      Environment:
+        Variables:
+          DYNAMODB_ITEM_HASH: this-is-a-key
+          DYNAMODB_TABLE_NAME: OurTable
+      Timeout: 10
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            Timeout: 10
+        MoreEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+            Timeout: 10

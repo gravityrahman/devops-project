@@ -1,0 +1,15 @@
+run:
+  modules-download-mode: readonly
+  tests: false
+linters-settings:
+  tagliatelle:
+    case:
+      rules:
+        json: snake
+  linters-settings:
+    lll:
+      line-length: 120
+linters:
+  enable-all: true
+  disable:
+    - exhaustivestruct
